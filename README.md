@@ -1,4 +1,4 @@
-# E-commerce-follow-alone
+# E-commerce-follow-along
 
 
 Milestone 1 
