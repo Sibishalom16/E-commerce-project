@@ -4,7 +4,7 @@ import { configureStore } from '@reduxjs/toolkit';
 
 // 1. Define initial state for user
 const initialUserState = {
-    email: '',
+    email: localStorage.getItem('userEmail') || '',
 };
 
 
@@ -12,9 +12,16 @@ const initialUserState = {
 const userReducer = (state = initialUserState, action) => {
     switch (action.type) {
         case 'SET_EMAIL':
+            localStorage.setItem('userEmail', action.payload);
             return {
                 ...state,
                 email: action.payload,
+            };
+        case 'LOGOUT':
+            localStorage.removeItem('userEmail');
+            return {
+                ...state,
+                email: '',
             };
         default:
             return state;

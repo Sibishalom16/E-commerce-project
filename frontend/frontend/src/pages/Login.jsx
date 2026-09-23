@@ -1,169 +1,206 @@
 import React, { useState } from "react";
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import styles from "../../styles/styles";
-// import axios from "axios";
+import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineMail, AiOutlineLock, AiOutlineShoppingCart } from "react-icons/ai";
 import axios from "../axios.config";
-
-
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { setemail } from "../../store/userActions";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
-
-
-
-
-
-
-
-
-// Ensure axios sends cookies with requests
-axios.defaults.withCredentials = true;
-
-
-
-
-
-
-
+import { setemail } from "../store/userActions";
 
 const Login = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
-
-
-
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
     try {
       const response = await axios.post("/api/v2/user/login", { email, password });
       console.log(response.data);
-      // Dispatch action to store email in Redux state
       dispatch(setemail(email));
-      // Redirect to profile page after successful login
       navigate("/");
-    } catch (error) {
-      console.error("There was an error logging in!", error);
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err.response?.data?.message || "Invalid email or password. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-
-
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Login to your account
-        </h2>
-      </div>
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
+    <div className="auth-page">
+      <div className="auth-card">
+        {/* Logo */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem' }}>
+          <div
+            style={{
+              width: '52px',
+              height: '52px',
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              borderRadius: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgb(37 99 235 / 0.35)',
+              marginBottom: '1rem',
+            }}
+          >
+            <AiOutlineShoppingCart size={26} color="white" />
+          </div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-text-primary)', margin: '0 0 0.25rem', letterSpacing: '-0.03em' }}>
+            Welcome back
+          </h1>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+            Sign in to your account
+          </p>
+        </div>
+
+        {/* Error Banner */}
+        {error && (
+          <div
+            className="animate-fadeIn"
+            style={{
+              backgroundColor: 'var(--color-danger-light)',
+              border: '1px solid #fecaca',
+              borderRadius: 'var(--radius-sm)',
+              padding: '0.75rem 1rem',
+              marginBottom: '1.25rem',
+              fontSize: '0.875rem',
+              color: 'var(--color-danger)',
+              fontWeight: 500,
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Email */}
+          <div>
+            <label htmlFor="login-email" className="input-label">Email Address</label>
+            <div style={{ position: 'relative' }}>
+              <AiOutlineMail
+                size={16}
+                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }}
+              />
+              <input
+                id="login-email"
+                type="email"
+                name="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input-field"
+                placeholder="you@example.com"
+                style={{ paddingLeft: '2.25rem' }}
+              />
             </div>
+          </div>
 
-
-
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  type={visible ? "text" : "password"}
-                  name="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-                {visible ? (
-                  <AiOutlineEye
-                    className="absolute right-2 top-2 cursor-pointer"
-                    size={25}
-                    onClick={() => setVisible(false)}
-                  />
-                ) : (
-                  <AiOutlineEyeInvisible
-                    className="absolute right-2 top-2 cursor-pointer"
-                    size={25}
-                    onClick={() => setVisible(true)}
-                  />
-                )}
-              </div>
-            </div>
-
-
-
-
-            <div className={`${styles.noramlFlex} justify-between`}>
-              <div className={`${styles.noramlFlex}`}>
-                <input
-                  type="checkbox"
-                  name="remember-me"
-                  id="remember-me"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Remember me
-                </label>
-              </div>
-              <div className="text-sm">
-                <a
-                  href=".forgot-password"
-                  className="font-medium text-blue-600 hover:text-blue-500"
-                >
-                  Forgot your password?
-                </a>
-              </div>
-            </div>
-
-
-
-
-            <div>
+          {/* Password */}
+          <div>
+            <label htmlFor="login-password" className="input-label">Password</label>
+            <div style={{ position: 'relative' }}>
+              <AiOutlineLock
+                size={16}
+                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }}
+              />
+              <input
+                id="login-password"
+                type={visible ? "text" : "password"}
+                name="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-field"
+                placeholder="Enter your password"
+                style={{ paddingLeft: '2.25rem', paddingRight: '2.5rem' }}
+              />
               <button
-                type="submit"
-                className="group relative w-full h-[40px] flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                type="button"
+                onClick={() => setVisible(!visible)}
+                aria-label={visible ? "Hide password" : "Show password"}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-muted)',
+                  padding: '2px',
+                  display: 'flex',
+                }}
               >
-                Submit
+                {visible ? <AiOutlineEye size={18} /> : <AiOutlineEyeInvisible size={18} />}
               </button>
             </div>
+          </div>
 
+          {/* Remember + Forgot */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                id="remember-me"
+                name="remember-me"
+                style={{ accentColor: 'var(--color-primary)' }}
+              />
+              <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>Remember me</span>
+            </label>
+            <a
+              href="#"
+              style={{ fontSize: '0.85rem', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}
+            >
+              Forgot password?
+            </a>
+          </div>
 
+          {/* Submit */}
+          <button
+            type="submit"
+            className="btn btn-primary btn-full btn-lg"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid white',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 0.75s linear infinite',
+                    display: 'inline-block',
+                  }}
+                />
+                Signing in...
+              </>
+            ) : 'Sign In'}
+          </button>
 
-
-            <div className={`${styles.noramlFlex} w-full`}>
-              <h4>Not have any account?</h4>
-            </div>
-          </form>
-        </div>
+          {/* Footer */}
+          <p style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--color-text-secondary)', margin: 0 }}>
+            Don&apos;t have an account?{' '}
+            <Link
+              to="/create-user"
+              style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none' }}
+            >
+              Create one
+            </Link>
+          </p>
+        </form>
       </div>
     </div>
   );
 };
-
-
-
 
 export default Login;

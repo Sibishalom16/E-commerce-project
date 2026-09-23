@@ -7,7 +7,7 @@ const router = express.Router();
 const { pupload } = require("../multer");
 const path = require('path');
 const mongoose = require('mongoose'); //
-const isAuthenticatedUser = require("../middleware/auth")
+const {isAuthenticatedUser } = require("../middleware/auth")
 // Validation function
 const validateProductData = (data) => {
     const errors = [];
@@ -23,7 +23,7 @@ const validateProductData = (data) => {
 };
 
 // Route: Create a new product
-router.post('/create-product', pupload.array('images', 10),isAuthenticatedUser, async (req, res) => {
+router.post('/create-product', pupload.array('images', 10), isAuthenticatedUser, async (req, res) => {
     console.log("🛒 Creating product");
     const { name, description, category, tags, price, stock, email } = req.body;
 
@@ -75,7 +75,7 @@ console.log("newProduct: ", newProduct)
     }
 });
 
-router.get('/get-products',isAuthenticatedUser, async (req, res) => {
+router.get('/get-products', async (req, res) => {
     try {
         const products = await Product.find();
         const productsWithFullImageUrl = products.map(product => {
@@ -116,7 +116,7 @@ router.get('/my-products',isAuthenticatedUser, async (req, res) => {
 );
 
 
-router.get('/product/:id',isAuthenticatedUser, async (req, res) => {
+router.get('/product/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const product = await Product.findById(id);

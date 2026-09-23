@@ -1,232 +1,207 @@
-/* eslint-disable no-unused-vars */
-// src/components/NavBar.jsx
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser } from '../store/userActions';
+import axios from '../axios.config';
+import {
+    AiOutlineHome,
+    AiOutlineShoppingCart,
+    AiOutlineUser,
+    AiOutlinePlusSquare,
+    AiOutlineAppstore,
+    AiOutlineUnorderedList,
+    AiOutlineMenu,
+    AiOutlineClose,
+    AiOutlineLogout,
+} from 'react-icons/ai';
+
+const NAV_ITEMS_AUTH = [
+    { to: '/', label: 'Home', icon: AiOutlineHome, end: true },
+    { to: '/my-products', label: 'My Products', icon: AiOutlineAppstore, end: false },
+    { to: '/Create-Product', label: 'Add Product', icon: AiOutlinePlusSquare, end: false },
+    { to: '/cart', label: 'Cart', icon: AiOutlineShoppingCart, end: false },
+    { to: '/profile', label: 'Profile', icon: AiOutlineUser, end: false },
+    { to: '/myorders', label: 'My Orders', icon: AiOutlineUnorderedList, end: false },
+];
+
+const NAV_ITEMS_UNAUTH = [
+    { to: '/', label: 'Home', icon: AiOutlineHome, end: true },
+    { to: '/login', label: 'Login', icon: AiOutlineUser, end: false },
+];
 
 const NavBar = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const userEmail = useSelector((state) => state.user.email);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
 
-    const toggleMenu = () => {
-        setIsOpen(!isOpen);
+    const closeMenu = () => setIsOpen(false);
+
+    const handleLogout = async () => {
+        try {
+            await axios.post('/api/v2/user/logout');
+        } catch (error) {
+            console.error("Logout request failed", error);
+        }
+        dispatch(logoutUser());
+        closeMenu();
+        navigate('/login');
     };
 
+    const activeNavItems = userEmail ? NAV_ITEMS_AUTH : NAV_ITEMS_UNAUTH;
+
     return (
-        <nav className="bg-blue-600">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
-                    {/* Hamburger Menu Button (visible on mobile) */}
-                    <div className="flex items-center md:hidden">
-                        <button
-                            onClick={toggleMenu}
-                            type="button"
-                            className="text-gray-200 hover:text-white focus:outline-none focus:text-white"
-                            aria-controls="mobile-menu"
-                            aria-expanded={isOpen}
+        <nav className="navbar" role="navigation" aria-label="Main navigation">
+            <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' }}>
+
+                    {/* ── Logo ── */}
+                    <NavLink
+                        to="/"
+                        onClick={closeMenu}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}
+                    >
+                        <div
+                            style={{
+                                width: '34px',
+                                height: '34px',
+                                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 2px 8px rgb(37 99 235 / 0.35)',
+                            }}
                         >
-                            <span className="sr-only">Open main menu</span>
-                            {!isOpen ? (
-                                <svg
-                                    className="h-6 w-6"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                </svg>
-                            ) : (
-                                // Close Icon
-                                <svg
-                                    className="h-6 w-6"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            )}
-                        </button>
-                    </div>
+                            <AiOutlineShoppingCart size={18} color="white" />
+                        </div>
+                        <span
+                            style={{
+                                fontWeight: 800,
+                                fontSize: '1.15rem',
+                                color: 'var(--color-text-primary)',
+                                letterSpacing: '-0.03em',
+                            }}
+                        >
+                            ShopEase
+                        </span>
+                    </NavLink>
 
-                    <div className="hidden md:flex md:items-center md:justify-center w-full">
-                        <ul className="flex space-x-6">
-                            <li>
-                                <NavLink
-                                    to="/"
-                                    end
-                                    className={({ isActive }) =>
-                                        isActive
-                                            ? "text-white font-semibold px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                            : "text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                    }
-                                >
-                                    Home
-                                </NavLink>
-                            </li>
-                            <li>
-                                <NavLink
-                                    to="/my-products"
-                                    className={({ isActive }) =>
-                                        isActive
-                                            ? "text-white font-semibold px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                            : "text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                    }
-                                >
-                                    My Products
-                                </NavLink>
-                            </li>
-                            <li>
-                                <NavLink
-                                    to="/create-product"
-                                    className={({ isActive }) =>
-                                        isActive
-                                            ? "text-white font-semibold px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                            : "text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                    }
-                                >
-                                    Add Products
-                                </NavLink>
-                            </li>
-                            <li>
-                                <NavLink
-                                    to="/cart"
-                                    className={({ isActive }) =>
-                                        isActive
-                                            ? "text-white font-semibold px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                            : "text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                    }
-                                >
-                                    Cart
-                                </NavLink>
-                            </li>
-
-                            <li>
-                                <NavLink
-                                    to="/profile"
-                                    className={({ isActive }) =>
-                                        isActive
-                                            ? "text-white font-semibold px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                            : "text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                    }
-                                >
-                                    Profile
-                                </NavLink>
-                            </li>
-                            <li>
-                                <NavLink
-                                    to="/myorders"
-                                    className={({ isActive }) =>
-                                        isActive
-                                            ? "text-white font-semibold px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                            : "text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                    }
-                                >
-                                    My Orders
-                                </NavLink>
-                            </li>
+                    {/* ── Desktop Links ── */}
+                    <div className="desktop-flex" style={{ display: 'none', alignItems: 'center', gap: '1rem', flex: 1, justifyContent: 'flex-end' }}>
+                        <ul
+                            style={{
+                                listStyle: 'none',
+                                margin: 0,
+                                padding: 0,
+                                display: 'flex',
+                                gap: '0.25rem',
+                                alignItems: 'center',
+                            }}
+                        >
+                            {activeNavItems.map(({ to, label, icon: Icon, end }) => (
+                                <li key={to}>
+                                    <NavLink
+                                        to={to}
+                                        end={end}
+                                        className={({ isActive }) =>
+                                            `nav-link${isActive ? ' active' : ''}`
+                                        }
+                                    >
+                                        <Icon size={16} aria-hidden="true" />
+                                        {label}
+                                    </NavLink>
+                                </li>
+                            ))}
                         </ul>
+
+                        {userEmail && (
+                            <button
+                                onClick={handleLogout}
+                                className="nav-link"
+                                style={{ color: 'var(--color-danger)', border: 'none', background: 'none', cursor: 'pointer', outline: 'none' }}
+                            >
+                                <AiOutlineLogout size={16} />
+                                Logout
+                            </button>
+                        )}
                     </div>
+
+                    {/* ── Hamburger ── */}
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        aria-label={isOpen ? 'Close menu' : 'Open menu'}
+                        aria-expanded={isOpen}
+                        aria-controls="mobile-menu"
+                        className="hamburger-btn"
+                        style={{
+                            background: 'none',
+                            border: '1.5px solid var(--color-border)',
+                            borderRadius: '8px',
+                            padding: '6px',
+                            cursor: 'pointer',
+                            color: 'var(--color-text-secondary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'background var(--transition-fast), color var(--transition-fast)',
+                        }}
+                    >
+                        {isOpen ? <AiOutlineClose size={20} /> : <AiOutlineMenu size={20} />}
+                    </button>
                 </div>
             </div>
 
-            {/* Mobile Menu */}
+            {/* ── Mobile Menu ── */}
             {isOpen && (
-                <div className="md:hidden" id="mobile-menu">
-                    <ul className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                        <li>
-                            <NavLink
-                                to="/"
-                                end
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "block text-white font-semibold px-3 py-2 rounded-md text-base transition-colors duration-200"
-                                        : "block text-gray-200 hover:text-white px-3 py-2 rounded-md text-base transition-colors duration-200"
-                                }
-                                onClick={() => setIsOpen(false)} // Close menu on link click
-                            >
-                                Home
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink
-                                to="/myproducts"
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "block text-white font-semibold px-3 py-2 rounded-md text-base transition-colors duration-200"
-                                        : "block text-gray-200 hover:text-white px-3 py-2 rounded-md text-base transition-colors duration-200"
-                                }
-                                onClick={() => setIsOpen(false)}
-                            >
-                                My Products
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink
-                                to="/addproducts"
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "block text-white font-semibold px-3 py-2 rounded-md text-base transition-colors duration-200"
-                                        : "block text-gray-200 hover:text-white px-3 py-2 rounded-md text-base transition-colors duration-200"
-                                }
-                                onClick={() => setIsOpen(false)}
-                            >
-                                Add Products
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink
-                                to="/cart"
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "block text-white font-semibold px-3 py-2 rounded-md text-base transition-colors duration-200"
-                                        : "block text-gray-200 hover:text-white px-3 py-2 rounded-md text-base transition-colors duration-200"
-                                }
-                                onClick={() => setIsOpen(false)}
-                            >
-                                Cart
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink
-                                to="/profile"
-                                className={({ isActive }) =>
-                                    isActive
-                                        ? "block text-white font-semibold px-3 py-2 rounded-md text-base transition-colors duration-200"
-                                        : "block text-gray-200 hover:text-white px-3 py-2 rounded-md text-base transition-colors duration-200"
-                                }
-                                onClick={() => setIsOpen(false)}
-                            >
-                                Profile
-                            </NavLink>
-                        </li>
-
-                        <li>
+                <div
+                    id="mobile-menu"
+                    className="animate-fadeIn"
+                    style={{
+                        borderTop: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-surface)',
+                        padding: '0.75rem 1rem 1rem',
+                    }}
+                >
+                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        {activeNavItems.map(({ to, label, icon: Icon, end }) => (
+                            <li key={to}>
                                 <NavLink
-                                    to="/myorders"
+                                    to={to}
+                                    end={end}
+                                    onClick={closeMenu}
                                     className={({ isActive }) =>
-                                        isActive
-                                            ? "text-white font-semibold px-3 py-2 rounded-md text-sm transition-colors duration-200"
-                                            : "text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm transition-colors duration-200"
+                                        `nav-link${isActive ? ' active' : ''}`
                                     }
+                                    style={{ width: '100%' }}
                                 >
-                                    My Orders
+                                    <Icon size={17} aria-hidden="true" />
+                                    {label}
                                 </NavLink>
                             </li>
-
+                        ))}
+                        {userEmail && (
+                            <li>
+                                <button
+                                    onClick={handleLogout}
+                                    className="nav-link"
+                                    style={{ width: '100%', textAlign: 'left', color: 'var(--color-danger)', border: 'none', background: 'none', cursor: 'pointer', outline: 'none' }}
+                                >
+                                    <AiOutlineLogout size={17} aria-hidden="true" />
+                                    Logout
+                                </button>
+                            </li>
+                        )}
                     </ul>
                 </div>
             )}
+
+            <style>{`
+        @media (min-width: 900px) {
+          .desktop-flex { display: flex !important; }
+          .hamburger-btn { display: none !important; }
+        }
+      `}</style>
         </nav>
     );
 };

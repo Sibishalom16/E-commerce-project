@@ -1,345 +1,295 @@
 import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
 import axios from "../axios.config";
-
-
 import Nav from '../components/nav';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-
-// 1) Import PayPalScriptProvider & PayPalButtons
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-
+import {
+    AiOutlineEnvironment,
+    AiOutlineCreditCard,
+    AiOutlineDollar,
+    AiOutlineShoppingCart,
+    AiOutlineArrowRight
+} from 'react-icons/ai';
 
 const OrderConfirmation = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { addressId, email } = location.state || {};
 
-
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [cartItems, setCartItems] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
-
-    // 2) Track which payment method is selected
-    const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' or 'paypal'
-
+    const [paymentMethod, setPaymentMethod] = useState('cod');
 
     useEffect(() => {
         if (!addressId || !email) {
-            navigate('/select-address');
+            navigate('/SelectAddress');
             return;
         }
-
-
         const fetchData = async () => {
             try {
-                // Fetch selected address
-                const addressResponse = await axios.get(
-                    '/api/v2/user/addresses',
-                    {
-                        params: { email: email },
-                    }
-                );
-                if (addressResponse.status !== 200) {
-                    throw new Error(`Failed to fetch addresses. Status: ${addressResponse.status}`);
-                }
-                const addressData = addressResponse.data;
-                const address = addressData.addresses.find(
-                    (addr) => addr._id === addressId
-                );
-                if (!address) {
-                    throw new Error('Selected address not found.');
-                }
+                const addressResponse = await axios.get('/api/v2/user/addresses', { params: { email } });
+                const address = addressResponse.data.addresses.find((addr) => addr._id === addressId);
+                if (!address) throw new Error('Selected address not found.');
                 setSelectedAddress(address);
 
-
-                // Fetch cart products
-                const cartResponse = await axios.get(
-                    '/api/v2/product/cartproducts',
-                    {
-                        params: { email: email },
-                    }
-                );
-                if (cartResponse.status !== 200) {
-                    throw new Error(`Failed to fetch cart products. Status: ${cartResponse.status}`);
-                }
-                const cartData = cartResponse.data;
-
-
-                // Process cart items to include full image URLs
-                const processedCartItems = cartData.cart.map((item) => ({
+                const cartResponse = await axios.get('/api/v2/product/cartproducts', { params: { email } });
+                const processedCartItems = cartResponse.data.cart.map((item) => ({
                     _id: item.productId._id,
                     name: item.productId.name,
                     price: item.productId.price,
-                    images: item.productId.images.map(
-                        (imagePath) => `http://localhost:8000${imagePath}`
-                    ),
+                    images: item.productId.images.map((imagePath) => `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${imagePath}`),
                     quantity: item.quantity,
                 }));
                 setCartItems(processedCartItems);
 
-
-                // Calculate total price
-                const total = processedCartItems.reduce(
-                    (acc, item) => acc + item.price * item.quantity,
-                    0
-                );
+                const total = processedCartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
                 setTotalPrice(total);
             } catch (err) {
                 console.error('Error fetching data:', err);
-                setError(
-                    err.response?.data?.message ||
-                    err.message ||
-                    'An unexpected error occurred.'
-                );
+                setError(err.response?.data?.message || err.message || 'An unexpected error occurred.');
             } finally {
                 setLoading(false);
             }
         };
-
-
         fetchData();
     }, [addressId, email, navigate]);
 
-
-    // 3) Single function to place order, can accept PayPal data if payment was online
     const handlePlaceOrder = async (paymentType = 'cod', paypalOrderData = null) => {
         try {
-            // Prepare order items
             const orderItems = cartItems.map((item) => ({
                 product: item._id,
                 name: item.name,
                 quantity: item.quantity,
                 price: item.price,
-                image:
-                    item.images && item.images.length > 0
-                        ? item.images[0]
-                        : '/default-avatar.png',
+                image: item.images && item.images.length > 0 ? item.images[0] : '/default-avatar.png',
             }));
 
-
-            // Construct payload with paymentMethod and optional PayPal data
             const payload = {
                 email,
                 shippingAddress: selectedAddress,
                 orderItems,
-                paymentMethod: paymentType, // 'cod' or 'paypal'
-                // Optionally store PayPal transaction details:
+                paymentMethod: paymentType,
                 paypalOrderData,
             };
 
-
-            // Place order
-            const response = await axios.post(
-                '/api/v2/orders/place-order',
-                payload
-            );
-
-
-            console.log('Orders placed successfully:', response.data);
-            // Navigate to success page
+            await axios.post('/api/v2/orders/place-order', payload);
             navigate('/myorders');
         } catch (error) {
             console.error('Error placing order:', error);
+            alert('Failed to place order. Please try again.');
         }
     };
 
-
-    // Handle loading / error states
-    if (loading) {
-        return (
-            <div className='w-full h-screen flex justify-center items-center'>
-                <p className='text-lg'>Processing...</p>
-            </div>
-        );
-    }
-
-
-    if (error) {
-        return (
-            <div className='w-full h-screen flex flex-col justify-center items-center'>
-                <p className='text-red-500 text-lg mb-4'>Error: {error}</p>
-                <button
-                    onClick={() => window.location.reload()}
-                    className='bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600'
-                >
-                    Retry
-                </button>
-            </div>
-        );
-    }
-
-
     return (
-        <div className='w-full min-h-screen flex flex-col'>
+        <div className='page-container'>
             <Nav />
-            <div className='flex-grow flex justify-center items-start p-4'>
-                <div className='w-full max-w-4xl border border-neutral-300 rounded-md flex flex-col p-6 bg-white shadow-md'>
-                    <h2 className='text-2xl font-semibold mb-6 text-center'>Order Confirmation</h2>
+            <div className='content-wrapper animate-page' style={{ maxWidth: '1000px' }}>
+                <h1 className="section-title" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+                    Checkout
+                </h1>
 
-
-                    {/* Selected Address */}
-                    <div className='mb-6'>
-                        <h3 className='text-xl font-medium mb-2'>Shipping Address</h3>
-                        {selectedAddress ? (
-                            <div className='p-4 border rounded-md'>
-                                <p className='font-medium'>
-                                    {selectedAddress.address1}
-                                    {selectedAddress.address2
-                                        ? `, ${selectedAddress.address2}`
-                                        : ''},{' '}
-                                    {selectedAddress.city}, {selectedAddress.state},{' '}
-                                    {selectedAddress.zipCode}
-                                </p>
-                                <p className='text-sm text-gray-600'>{selectedAddress.country}</p>
-                                <p className='text-sm text-gray-500'>
-                                    Type: {selectedAddress.addressType || 'N/A'}
-                                </p>
-                            </div>
-                        ) : (
-                            <p>No address selected.</p>
-                        )}
+                {loading && (
+                    <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                        <div style={{ flex: '1 1 500px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div className="skeleton card" style={{ height: '200px' }} />
+                            <div className="skeleton card" style={{ height: '200px' }} />
+                        </div>
+                        <div className="skeleton card" style={{ flex: '1 1 300px', height: '300px' }} />
                     </div>
+                )}
 
+                {!loading && error && (
+                    <div className="empty-state card">
+                        <h2 className="empty-state-title text-danger">Error Loading Checkout</h2>
+                        <p className="empty-state-subtitle">{error}</p>
+                        <button className="btn btn-primary" onClick={() => window.location.reload()}>Retry</button>
+                    </div>
+                )}
 
-                    {/* Cart Items */}
-                    <div className='mb-6'>
-                        <h3 className='text-xl font-medium mb-2'>Cart Items</h3>
-                        {cartItems.length > 0 ? (
-                            <div className='space-y-4'>
-                                {cartItems.map((item) => (
-                                    <div
-                                        key={item._id}
-                                        className='flex justify-between items-center border p-4 rounded-md'
-                                    >
-                                        <div className='flex items-center'>
-                                            <img
-                                                src={
-                                                    item.images && item.images.length > 0
-                                                        ? item.images[0]
-                                                        : '/default-avatar.png'
-                                                }
-                                                alt={item.name}
-                                                className='w-16 h-16 object-cover rounded-md mr-4'
-                                            />
-                                            <div>
-                                                <p className='font-medium'>{item.name}</p>
-                                                <p className='text-sm text-gray-600'>
-                                                    Quantity: {item.quantity}
-                                                </p>
-                                                <p className='text-sm text-gray-600'>
-                                                    Price: ${item.price.toFixed(2)}
+                {!loading && !error && (
+                    <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+
+                        {/* Left Column (Address & Items) */}
+                        <div style={{ flex: '1 1 500px', display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
+
+                            {/* Selected Address Card */}
+                            <div className="card" style={{ padding: '1.5rem' }}>
+                                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <AiOutlineEnvironment size={20} color="var(--color-primary)" />
+                                    Shipping Address
+                                </h2>
+                                {selectedAddress ? (
+                                    <div style={{ backgroundColor: 'var(--color-surface-alt)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                            <span style={{ fontWeight: 600 }}>{selectedAddress.addressType || 'Address'}</span>
+                                            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/SelectAddress')}>Change</button>
+                                        </div>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>
+                                            {selectedAddress.address1} {selectedAddress.address2 && `, ${selectedAddress.address2}`}
+                                            <br />
+                                            {selectedAddress.city}, {selectedAddress.state} {selectedAddress.zipCode}
+                                            <br />
+                                            {selectedAddress.country}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <p>No address selected.</p>
+                                )}
+                            </div>
+
+                            {/* Cart Items Card */}
+                            <div className="card" style={{ padding: '1.5rem' }}>
+                                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <AiOutlineShoppingCart size={20} color="var(--color-primary)" />
+                                    Cart Items
+                                </h2>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {cartItems.map((item) => (
+                                        <div key={item._id} style={{ display: 'flex', gap: '1rem', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
+                                            <div style={{ width: '64px', height: '64px', borderRadius: '8px', backgroundColor: 'var(--color-surface-alt)', overflow: 'hidden', flexShrink: 0 }}>
+                                                <img
+                                                    src={item.images && item.images.length > 0 ? item.images[0] : 'https://placehold.co/64'}
+                                                    alt={item.name}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: '0 0 0.25rem' }}>{item.name}</p>
+                                                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                                                    Qty: {item.quantity} × ${item.price.toFixed(2)}
                                                 </p>
                                             </div>
-                                        </div>
-                                        <div>
-                                            <p className='font-semibold'>
+                                            <div style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>
                                                 ${(item.price * item.quantity).toFixed(2)}
-                                            </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        ) : (
-                            <p>Your cart is empty.</p>
-                        )}
-                    </div>
 
-
-                    {/* Total Price */}
-                    <div className='mb-6 flex justify-end'>
-                        <p className='text-xl font-semibold'>Total: ${totalPrice.toFixed(2)}</p>
-                    </div>
-
-
-                    {/* Payment Method (Cash on Delivery or PayPal) */}
-                    <div className='mb-6'>
-                        <h3 className='text-xl font-medium mb-2'>Payment Method</h3>
-                        <div className='p-4 border rounded-md space-x-4'>
-                            <label className='mr-4'>
-                                <input
-                                    type='radio'
-                                    name='paymentMethod'
-                                    value='cod'
-                                    checked={paymentMethod === 'cod'}
-                                    onChange={() => setPaymentMethod('cod')}
-                                />
-                                <span className='ml-2'>Cash on Delivery</span>
-                            </label>
-                            <label>
-                                <input
-                                    type='radio'
-                                    name='paymentMethod'
-                                    value='paypal'
-                                    checked={paymentMethod === 'paypal'}
-                                    onChange={() => setPaymentMethod('paypal')}
-                                />
-                                <span className='ml-2'>Pay Online (PayPal)</span>
-                            </label>
                         </div>
-                     
 
+                        {/* Right Column (Payment & Summary) */}
+                        <div style={{ flex: '1 1 300px', minWidth: '300px' }}>
+                            <div className="card" style={{ padding: '1.5rem', position: 'sticky', top: '80px' }}>
 
-                        {paymentMethod === 'paypal' && (
-                            <div className='mt-4' style={{ maxWidth: '500px' }}>
-                                <PayPalScriptProvider
-                                    options={{
-                                        'client-id': 'AQ9AHGwnIUKME-jEniPL_r7jo6aa_I1ZYokMaHbvPyPiUJMUM1dXo1I7CUFlpVrG6C8e6M3Nyase7Pwd',
-                                    }}
+                                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <AiOutlineCreditCard size={20} color="var(--color-primary)" />
+                                    Payment Method
+                                </h2>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
+                                    <label
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            padding: '1rem',
+                                            border: `1.5px solid ${paymentMethod === 'cod' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                                            borderRadius: 'var(--radius-sm)',
+                                            cursor: 'pointer',
+                                            backgroundColor: paymentMethod === 'cod' ? 'var(--color-primary-light)' : 'transparent',
+                                            transition: 'all 0.2s'
+                                        }}
                                     >
-                                   
-                                    <PayPalButtons
-                                        style={{ layout: 'vertical' }}
-                                        createOrder={(data, actions) => {
-                                            return actions.order.create({
-                                                purchase_units: [
-                                                    {
-                                                        amount: {
-                                                            value: totalPrice.toFixed(2),
-                                                        },
-                                                    },
-                                                ],
-                                            });
-                                        }}
-                                        onApprove={async (data, actions) => {
-                                            // Captures funds from the transaction
-                                            const order = await actions.order.capture();
-                                            console.log('PayPal order success:', order);
+                                        <input
+                                            type='radio'
+                                            name='paymentMethod'
+                                            value='cod'
+                                            checked={paymentMethod === 'cod'}
+                                            onChange={() => setPaymentMethod('cod')}
+                                            style={{ accentColor: 'var(--color-primary)', width: '18px', height: '18px' }}
+                                        />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <AiOutlineDollar size={20} color="var(--color-text-secondary)" />
+                                            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>Cash on Delivery</span>
+                                        </div>
+                                    </label>
 
+                                    <label
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            padding: '1rem',
+                                            border: `1.5px solid ${paymentMethod === 'paypal' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                                            borderRadius: 'var(--radius-sm)',
+                                            cursor: 'pointer',
+                                            backgroundColor: paymentMethod === 'paypal' ? 'var(--color-primary-light)' : 'transparent',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <input
+                                            type='radio'
+                                            name='paymentMethod'
+                                            value='paypal'
+                                            checked={paymentMethod === 'paypal'}
+                                            onChange={() => setPaymentMethod('paypal')}
+                                            style={{ accentColor: 'var(--color-primary)', width: '18px', height: '18px' }}
+                                        />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <AiOutlineCreditCard size={20} color="var(--color-text-secondary)" />
+                                            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>Pay Online (PayPal)</span>
+                                        </div>
+                                    </label>
+                                </div>
 
-                                            // Call place order with PayPal data
-                                            handlePlaceOrder('paypal', order);
-                                        }}
-                                        onError={(err) => {
-                                            console.error('PayPal checkout error:', err);
-                                        }}
-                                    />
-                                </PayPalScriptProvider>
+                                <div style={{ backgroundColor: 'var(--color-surface-alt)', padding: '1.25rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                                        <span style={{ color: 'var(--color-text-secondary)' }}>Subtotal</span>
+                                        <span style={{ fontWeight: 600 }}>${totalPrice.toFixed(2)}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                                        <span style={{ color: 'var(--color-text-secondary)' }}>Shipping</span>
+                                        <span style={{ fontWeight: 600, color: 'var(--color-success)' }}>Free</span>
+                                    </div>
+                                    <div style={{ height: '1px', backgroundColor: 'var(--color-border)', margin: '0.75rem 0' }} />
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 700 }}>Total</span>
+                                        <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-primary)' }}>${totalPrice.toFixed(2)}</span>
+                                    </div>
+                                </div>
+
+                                {paymentMethod === 'cod' ? (
+                                    <button
+                                        onClick={() => handlePlaceOrder('cod', null)}
+                                        className='btn btn-primary btn-full btn-lg'
+                                        style={{ borderRadius: '10px' }}
+                                    >
+                                        Confirm Order
+                                        <AiOutlineArrowRight size={16} />
+                                    </button>
+                                ) : (
+                                    <div style={{ minHeight: '150px' }}>
+                                        <PayPalScriptProvider options={{ 'client-id': 'AQ9AHGwnIUKME-jEniPL_r7jo6aa_I1ZYokMaHbvPyPiUJMUM1dXo1I7CUFlpVrG6C8e6M3Nyase7Pwd' }}>
+                                            <PayPalButtons
+                                                style={{ layout: 'vertical', shape: 'rect' }}
+                                                createOrder={(data, actions) => {
+                                                    return actions.order.create({
+                                                        purchase_units: [{ amount: { value: totalPrice.toFixed(2) } }],
+                                                    });
+                                                }}
+                                                onApprove={async (data, actions) => {
+                                                    const order = await actions.order.capture();
+                                                    handlePlaceOrder('paypal', order);
+                                                }}
+                                                onError={(err) => console.error('PayPal checkout error:', err)}
+                                            />
+                                        </PayPalScriptProvider>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-
-
-                    {/* Place Order Button (for COD) */}
-                    {paymentMethod === 'cod' && (
-                        <div className='flex justify-center'>
-                            <button
-                                onClick={() => handlePlaceOrder('cod', null)}
-                                className='bg-green-500 text-white px-6 py-3 rounded-md hover:bg-green-600 transition-colors'
-                            >
-                                Place Order
-                            </button>
                         </div>
-                    )}
-                </div>
+
+                    </div>
+                )}
             </div>
         </div>
     );
 };
-
 
 export default OrderConfirmation;

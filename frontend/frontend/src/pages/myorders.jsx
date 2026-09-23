@@ -1,27 +1,32 @@
 import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
 import axios from "../axios.config";
-
-
-import Nav from '../components/nav'
-import { useSelector } from 'react-redux'; // Import useSelector
-
+import Nav from '../components/nav';
+import { useSelector } from 'react-redux';
+import {
+    AiOutlineShoppingCart,
+    AiOutlineEnvironment,
+    AiOutlineUnorderedList,
+    AiOutlineClose,
+    AiOutlineCheck,
+} from 'react-icons/ai';
 
 const MyOrdersPage = () => {
-        // Retrieve email from Redux state
     const userEmail = useSelector((state) => state.user.email);
     const [orders, setOrders] = useState([]);
-    const defaultEmail = userEmail;
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-
     const fetchOrders = async () => {
+        if (!userEmail) {
+            setError("Please login to view your orders.");
+            setOrders([]);
+            return;
+        }
         try {
             setLoading(true);
             setError('');
             const response = await axios.get('/api/v2/orders/myorders', {
-                params: { email: defaultEmail },
+                params: { email: userEmail },
             });
             setOrders(response.data.orders);
         } catch (err) {
@@ -31,16 +36,13 @@ const MyOrdersPage = () => {
         }
     };
 
-
-    // Cancel order handler
     const cancelOrder = async (orderId) => {
-        console.log("aa")
+        if (!window.confirm('Cancel this order? This action cannot be undone.')) return;
         try {
             const response = await axios.patch(`/api/v2/orders/cancel-order/${orderId}`);
-            // Update the order in local state: either remove or update its status.
-            setOrders((prevOrders) =>
-                prevOrders.map((order) =>
-                    order._id === orderId ? { ...order, status: response.data.order.status } : order
+            setOrders((prev) =>
+                prev.map((order) =>
+                    order._id === orderId ? { ...order, orderStatus: response.data.order.status } : order
                 )
             );
             fetchOrders();
@@ -50,103 +52,145 @@ const MyOrdersPage = () => {
         }
     };
 
-
-    useEffect(() => {
-        fetchOrders();
-    }, []);
-
+    useEffect(() => { fetchOrders(); }, [userEmail]);
 
     return (
-        <>
+        <div className="page-container">
             <Nav />
-            <div className="min-h-screen bg-gray-100 py-10">
-                <div className="max-w-4xl mx-auto px-4">
-                    <h1 className="text-4xl font-extrabold text-center mb-10">My Orders</h1>
+            <div className="content-wrapper animate-page" style={{ maxWidth: '860px' }}>
+                <h1 className="section-title" style={{ marginBottom: '1.5rem' }}>My Orders</h1>
 
+                {/* Loading skeleton */}
+                {loading && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="card" style={{ padding: '1.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                    <div className="skeleton" style={{ height: '14px', width: '40%' }} />
+                                    <div className="skeleton" style={{ height: '14px', width: '15%' }} />
+                                </div>
+                                <div className="skeleton" style={{ height: '12px', width: '60%', marginBottom: '0.5rem' }} />
+                                <div className="skeleton" style={{ height: '12px', width: '40%' }} />
+                            </div>
+                        ))}
+                    </div>
+                )}
 
-                    {loading && (
-                        <p className="text-center text-blue-500 text-lg">Loading orders...</p>
-                    )}
-                    {error && (
-                        <p className="text-center text-red-500 text-lg">{error}</p>
-                    )}
+                {/* Error */}
+                {!loading && error && (
+                    <div className="empty-state" style={{ minHeight: '40vh' }}>
+                        <AiOutlineUnorderedList className="empty-state-icon" size={56} />
+                        <h2 className="empty-state-title">Couldn&apos;t load orders</h2>
+                        <p className="empty-state-subtitle">{error}</p>
+                    </div>
+                )}
 
+                {/* Empty */}
+                {!loading && !error && orders.length === 0 && (
+                    <div className="empty-state" style={{ minHeight: '50vh' }}>
+                        <AiOutlineShoppingCart className="empty-state-icon" size={60} />
+                        <h2 className="empty-state-title">No Orders Yet</h2>
+                        <p className="empty-state-subtitle">You haven&apos;t placed any orders. Start shopping!</p>
+                    </div>
+                )}
 
-                    {orders.length > 0 ? (
-                        <div className="grid gap-8">
-                            {orders.map((order) => (
+                {/* Orders List */}
+                {!loading && !error && orders.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {orders.map((order, i) => {
+                            const isCancelled = order.orderStatus === 'Cancelled';
+                            return (
                                 <div
                                     key={order._id}
-                                    className="bg-white rounded-lg shadow-lg p-6 transition transform hover:scale-105"
+                                    className={`card card-delay-${Math.min(i + 1, 5)}`}
+                                    style={{ padding: '1.5rem', animation: 'fadeInUp 0.35s ease both' }}
                                 >
-                                    <div className="flex justify-between items-center border-b pb-3 mb-4">
-                                        <p className="text-lg font-semibold">
-                                            Order ID: <span className="font-light text-sm">{order._id}</span>
-                                        </p>
-                                        <p className="text-2xl font-bold text-green-600">
-                                            ${order.totalAmount}
-                                        </p>
-                                    </div>
-
-
-                                    <div className="mb-4">
-                                        <h2 className="text-xl font-semibold mb-2">Shipping Address</h2>
-                                        <div className="text-gray-700 ml-4 space-y-1">
-                                            <p>
-                                                {order.shippingAddress.address1}
-                                                {order.shippingAddress.address2 &&
-                                                    `, ${order.shippingAddress.address2}`}
+                                    {/* Order Header */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.875rem', marginBottom: '1rem' }}>
+                                        <div>
+                                            <p style={{ margin: 0, fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                Order ID
                                             </p>
-                                            <p>
-                                                {order.shippingAddress.city}, {order.shippingAddress.zipCode}
+                                            <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'monospace', marginTop: '0.15rem' }}>
+                                                {order._id}
                                             </p>
-                                            <p>{order.shippingAddress.country}</p>
-                                            <p className="italic">
-                                                {order.shippingAddress.addressType}
-                                            </p>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary)' }}>
+                                                ${order.totalAmount}
+                                            </span>
+                                            {isCancelled ? (
+                                                <span className="badge badge-danger">
+                                                    <AiOutlineClose size={10} style={{ marginRight: '3px' }} />
+                                                    Cancelled
+                                                </span>
+                                            ) : (
+                                                <span className="badge badge-success">
+                                                    <AiOutlineCheck size={10} style={{ marginRight: '3px' }} />
+                                                    {order.orderStatus || 'Active'}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
+                                    <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                                        {/* Shipping Address */}
+                                        <div style={{ flex: '1 1 200px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                                                <AiOutlineEnvironment size={14} color="var(--color-primary)" />
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-text-secondary)' }}>Shipping Address</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                                                <p style={{ margin: 0 }}>
+                                                    {order.shippingAddress.address1}
+                                                    {order.shippingAddress.address2 && `, ${order.shippingAddress.address2}`}
+                                                </p>
+                                                <p style={{ margin: 0 }}>{order.shippingAddress.city}, {order.shippingAddress.zipCode}</p>
+                                                <p style={{ margin: 0 }}>{order.shippingAddress.country}</p>
+                                                {order.shippingAddress.addressType && (
+                                                    <span className="badge badge-neutral" style={{ marginTop: '0.25rem' }}>{order.shippingAddress.addressType}</span>
+                                                )}
+                                            </div>
+                                        </div>
 
-                                    <div className="mb-4">
-                                        <h2 className="text-xl font-semibold mb-2">Items</h2>
-                                        <ul className="list-disc ml-8 space-y-1 text-gray-700">
-                                            {order.orderItems.map((item, index) => (
-                                                <li key={index}>
-                                                    {item.name} - Qty: {item.quantity} - ${item.price}
-                                                </li>
-                                            ))}
-                                        </ul>
+                                        {/* Items */}
+                                        <div style={{ flex: '1 1 200px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                                                <AiOutlineUnorderedList size={14} color="var(--color-primary)" />
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-text-secondary)' }}>Items</span>
+                                            </div>
+                                            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                                                {order.orderItems.map((item, idx) => (
+                                                    <li key={idx} style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                                                        <span style={{ fontWeight: 500 }}>{item.name} <span style={{ color: 'var(--color-text-muted)' }}>×{item.quantity}</span></span>
+                                                        <span style={{ fontWeight: 600 }}>${item.price}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
                                     </div>
 
-
-                                    {/* Cancel button (hide if already cancelled) */}
-                                    {order.orderStatus !== 'Cancelled' && (
-                                        <button
-                                            onClick={() => cancelOrder(order._id)}
-                                            className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded"
-                                        >
-                                            Cancel Order
-                                        </button>
-                                    )}
-                                    {order.orderStatus === 'Cancelled' && (
-                                        <p className="text-red-600 font-semibold">Order Cancelled</p>
+                                    {/* Cancel Button */}
+                                    {!isCancelled && (
+                                        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
+                                            <button
+                                                onClick={() => cancelOrder(order._id)}
+                                                className="btn btn-danger btn-sm"
+                                                aria-label={`Cancel order ${order._id}`}
+                                            >
+                                                <AiOutlineClose size={13} />
+                                                Cancel Order
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        !loading && (
-                            <p className="text-center text-gray-500 mt-10 text-lg">
-                                No orders found.
-                            </p>
-                        )
-                    )}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
-        </>
+        </div>
     );
 };
-
 
 export default MyOrdersPage;

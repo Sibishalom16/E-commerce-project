@@ -1,108 +1,121 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
-import { IoIosAdd } from "react-icons/io";
-import { IoIosRemove } from "react-icons/io";
+import { AiOutlinePlus, AiOutlineMinus, AiOutlineDelete } from "react-icons/ai";
+import { useSelector } from "react-redux";
+import axios from "../axios.config";
 
-export default function CartProduct({ _id, name, images, quantity, price }) {
-    const [currentIndex, setCurrentIndex] = useState(0);
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+export default function CartProduct({ _id, name, images, quantity, price, stock, onQuantityChange }) {
     const [quantityVal, setQuantityVal] = useState(quantity);
-
-    useEffect(() => {
-        if (!images || images.length === 0) return;
-        const interval = setInterval(() => {
-            setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-        }, 2000);
-        return () => clearInterval(interval);
-    }, [images]);
+    const userEmail = useSelector((state) => state.user.email);
 
     const handleIncrement = () => {
-        const newquantityVal = quantityVal + 1;
-        setQuantityVal(newquantityVal);
-        updateQuantityVal(newquantityVal);
+        let newQty = quantityVal + 1;
+        if (stock !== undefined && newQty > stock) {
+            newQty = stock;
+        }
+        setQuantityVal(newQty);
+        updateQuantity(newQty);
     };
 
     const handleDecrement = () => {
-        const newquantityVal = quantityVal > 1 ? quantityVal - 1 : 1;
-        setQuantityVal(newquantityVal);
-        updateQuantityVal(newquantityVal);
+        const newQty = quantityVal > 1 ? quantityVal - 1 : 1;
+        setQuantityVal(newQty);
+        updateQuantity(newQty);
     };
 
-    const updateQuantityVal = (quantity) => {
-        fetch('http://localhost:8000/api/v2/product/cartproduct/quantity', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: 'guruprasadhraghavan@gmail.com',
-                productId: _id,
-                quantity,
-            }),
-        })
-            .then((res) => {
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                }
-                return res.json();
-            })
-            .then((data) => {
-                console.log('quantityVal updated:', data);
-            })
-            .catch((err) => {
-                console.error('Error updating quantityVal:', err);
-            });
+    const updateQuantity = (qty) => {
+        if (onQuantityChange) onQuantityChange(qty);
+        axios.put('/api/v2/product/cartproduct/quantity', {
+            email: userEmail,
+            productId: _id,
+            quantity: qty,
+        }).catch((err) => {
+            console.error('Error updating quantity:', err);
+        });
     };
 
-    const currentImage = images[currentIndex];
+    const currentImage = images && images.length > 0 ? images[0] : null;
+    const itemTotal = (price * quantityVal).toFixed(2);
+
     return (
-        <div className="h-max w-full p-4 flex justify-between border-b border-neutral-300 bg-neutral-100 rounded-lg">
-            <div className="flex flex-col gap-y-2">
-                <img
-                    src={`http://localhost:8000${currentImage}`} // Ensure the URL is correct\
-                    alt={name}
-                    className="w-32 h-32 object-cover rounded-lg border border-neutral-300"
-                />
-                <div className="flex flex-row items-center gap-x-2 md:hidden">
-                    <div
-                        onClick={handleIncrement}
-                        className="flex justify-center items-center bg-gray-200 hover:bg-gray-300 active:translate-y-1 p-2 rounded-xl cursor-pointer"
-                    >
-                        <IoIosAdd />
+        <div
+            className="card animate-fadeInUp"
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                padding: '1rem',
+                marginBottom: '0.75rem',
+            }}
+        >
+            {/* Product Image */}
+            <div
+                style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    backgroundColor: 'var(--color-surface-alt)',
+                    border: '1px solid var(--color-border)',
+                }}
+            >
+                {currentImage ? (
+                    <img
+                        src={`${API_BASE}${currentImage}`}
+                        alt={name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://placehold.co/80x80/f1f5f9/94a3b8?text=?';
+                        }}
+                    />
+                ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.65rem' }}>
+                        No img
                     </div>
-                    <div className="px-5 py-1 text-center bg-gray-100 rounded-xl pointer-events-none">
-                        {quantityVal}
-                    </div>
-                    <div
-                        onClick={handleDecrement}
-                        className="flex justify-center items-center bg-gray-200 hover:bg-gray-300 active:translate-y-1 p-2 rounded-xl cursor-pointer"
-                    >
-                        <IoIosRemove />
-                    </div>
-                </div>
+                )}
             </div>
-            <div className="w-full flex flex-col justify-start items-start md:flex-row md:justify-between md:items-center px-4">
-                <p className="text-lg font-semibold">{name}</p>
-                <p className="text-lg font-semibold">${price*quantityVal}</p>
-                <div className="hidden md:flex flex-row items-center gap-x-2 ">
-                    <div
-                        onClick={handleIncrement}
-                        className="flex justify-center items-center bg-gray-200 hover:bg-gray-300 active:translate-y-1 p-2 rounded-xl cursor-pointer"
-                    >
-                        <IoIosAdd />
-                    </div>
-                    <div className="px-5 py-1 text-center bg-gray-100 rounded-xl pointer-events-none">
-                        {quantityVal}
-                    </div>
-                    <div
-                        onClick={handleDecrement}
-                        className="flex justify-center items-center bg-gray-200 hover:bg-gray-300 active:translate-y-1 p-2 rounded-xl cursor-pointer"
-                    >
-                        <IoIosRemove />
-                    </div>
-                </div>
+
+            {/* Name + Price */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {name}
+                </p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: '0.2rem 0 0' }}>
+                    ${Number(price).toFixed(2)} each
+                </p>
             </div>
-            
+
+            {/* Quantity Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
+                <button
+                    className="qty-btn"
+                    onClick={handleDecrement}
+                    aria-label="Decrease quantity"
+                >
+                    <AiOutlineMinus size={14} />
+                </button>
+                <span className="qty-display">{quantityVal}</span>
+                <button
+                    className="qty-btn"
+                    onClick={handleIncrement}
+                    aria-label="Increase quantity"
+                    disabled={stock !== undefined && quantityVal >= stock}
+                >
+                    <AiOutlinePlus size={14} />
+                </button>
+            </div>
+
+            {/* Item Total */}
+            <div style={{ minWidth: '70px', textAlign: 'right', flexShrink: 0 }}>
+                <span style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--color-primary)' }}>
+                    ${itemTotal}
+                </span>
+            </div>
         </div>
     );
 }

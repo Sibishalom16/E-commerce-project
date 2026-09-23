@@ -1,7 +1,8 @@
-
-/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-export default function Product({
+import React from 'react';
+import { AiOutlineHome } from 'react-icons/ai';
+
+export default function AddressCard({
     _id,
     country,
     city,
@@ -11,66 +12,46 @@ export default function Product({
     addressType,
 }) {
     return (
-        <div className="w-full h-max bg-transparent p-5 rounded-lg border border-neutral-600 grid grid-cols-12 gap-5">
-            <div className="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 xl:col-span-2">
-                <div className="w-full h-max bg-neutral-700 rounded-lg flex flex-col gap-y-2">
-                    <div className="w-full h-max break-all text-xl text-neutral-200">
-                        Country
+        <div
+            className="card animate-fadeInUp"
+            style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+        >
+            {/* Header row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div
+                        style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            backgroundColor: 'var(--color-primary-light)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <AiOutlineHome size={16} color="var(--color-primary)" />
                     </div>
-                    <div className="w-full h-max break-all text-lg font-light text-neutral-200">
-                        {country}
-                    </div>
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>
+                        {addressType || 'Address'}
+                    </span>
                 </div>
+                {addressType && (
+                    <span className="badge badge-neutral">{addressType}</span>
+                )}
             </div>
-            <div className="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 xl:col-span-2">
-                <div className="w-full h-max bg-neutral-700 rounded-lg flex flex-col gap-y-2">
-                    <div className="w-full h-max break-all text-xl text-neutral-200">
-                        City
-                    </div>
-                    <div className="w-full h-max break-all text-lg font-light text-neutral-200">
-                        {city}
-                    </div>
-                </div>
-            </div>
-            <div className="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 xl:col-span-2">
-                <div className="w-full h-max bg-neutral-700 rounded-lg flex flex-col gap-y-2">
-                    <div className="w-full h-max break-all text-xl text-neutral-200">
-                        Address 1
-                    </div>
-                    <div className="w-full h-max break-all text-lg font-light text-neutral-200">
-                        {address1}
-                    </div>
-                </div>
-            </div>
-            <div className="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 xl:col-span-2">
-                <div className="w-full h-max bg-neutral-700 rounded-lg flex flex-col gap-y-2">
-                    <div className="w-full h-max break-all text-xl text-neutral-200">
-                        Address 2
-                    </div>
-                    <div className="w-full h-max break-all text-lg font-light text-neutral-200">
-                        {address2}
-                    </div>
-                </div>
-            </div>
-            <div className="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 xl:col-span-2">
-                <div className="w-full h-max bg-neutral-700 rounded-lg flex flex-col gap-y-2">
-                    <div className="w-full h-max break-all text-xl text-neutral-200">
-                        Zip Code
-                    </div>
-                    <div className="w-full h-max break-all text-lg font-light text-neutral-200">
-                        {zipCode}
-                    </div>
-                </div>
-            </div>
-            <div className="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 xl:col-span-2">
-                <div className="w-full h-max bg-neutral-700 rounded-lg flex flex-col gap-y-2">
-                    <div className="w-full h-max break-all text-xl text-neutral-200">
-                        Address Type
-                    </div>
-                    <div className="w-full h-max break-all text-lg font-light text-neutral-200">
-                        {addressType}
-                    </div>
-                </div>
+
+            {/* Address details */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                    {address1}{address2 ? `, ${address2}` : ''}
+                </p>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                    {city}, {zipCode}
+                </p>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                    {country}
+                </p>
             </div>
         </div>
     );

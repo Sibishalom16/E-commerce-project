@@ -1,69 +1,35 @@
 import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
 import axios from "../axios.config";
-
-
-import Nav from '../components/nav'; // Ensure correct casing
+import Nav from '../components/nav';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux'; // Import useSelector
-
-
-
+import { useSelector } from 'react-redux';
+import { AiOutlineEnvironment, AiOutlineCheckCircle, AiOutlinePlus } from 'react-icons/ai';
 
 const SelectAddress = () => {
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
-
-
-
-
-
-
-
-
-
-
-     // Retrieve email from Redux state
-     const userEmail = useSelector((state) => state.user.email);
-
-
-
+    const userEmail = useSelector((state) => state.user.email);
 
     useEffect(() => {
+        if (!userEmail) {
+            navigate('/login');
+            return;
+        }
         const fetchAddresses = async () => {
             try {
                 const response = await axios.get('/api/v2/user/addresses', {
                     params: { email: userEmail },
                 });
-
-
-
-
                 if (response.status !== 200) {
-                    if (response.status === 404) {
-                        throw new Error('User not found.');
-                    } else if (response.status === 400) {
-                        throw new Error('Bad request. Email parameter is missing.');
-                    } else {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-
-
-
-
                 const data = response.data;
-
-
-
-
                 if (data && Array.isArray(data.addresses)) {
                     setAddresses(data.addresses);
                 } else {
                     setAddresses([]);
-                    console.warn('Unexpected response structure:', data);
                 }
             } catch (err) {
                 console.error('Error fetching addresses:', err);
@@ -72,93 +38,115 @@ const SelectAddress = () => {
                 setLoading(false);
             }
         };
-
-
-
-
         fetchAddresses();
-    }, [userEmail]);
-
-
-
+    }, [userEmail, navigate]);
 
     const handleSelectAddress = (addressId) => {
-        // Navigate to Order Confirmation with the selected address ID and email
         navigate('/order-confirmation', { state: { addressId, email: userEmail } });
     };
 
-
-
-
-    // Render loading state
-    if (loading) {
-        return (
-            <div className='w-full h-screen flex justify-center items-center'>
-                <p className='text-lg'>Loading addresses...</p>
-            </div>
-        );
-    }
-
-
-
-
-    // Render error state
-    if (error) {
-        return (
-            <div className='w-full h-screen flex flex-col justify-center items-center'>
-                <p className='text-red-500 text-lg mb-4'>Error: {error}</p>
-                <button
-                    onClick={() => window.location.reload()}
-                    className='bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600'
-                >
-                    Retry
-                </button>
-            </div>
-        );
-    }
-
-
-
-
     return (
-        <div className='w-full min-h-screen flex flex-col'>
+        <div className='page-container'>
             <Nav />
-            <div className='flex-grow flex justify-center items-center p-4'>
-                <div className='w-full max-w-4xl border border-neutral-300 rounded-md flex flex-col p-6 bg-white shadow-md'>
-                    <h2 className='text-2xl font-semibold mb-6 text-center'>Select Shipping Address</h2>
-                    {addresses.length > 0 ? (
-                        <div className='space-y-4 overflow-auto max-h-96'>
-                            {addresses.map((address) => (
-                                <div
-                                    key={address._id}
-                                    className='border p-4 rounded-md flex justify-between items-center hover:shadow-md transition-shadow'
-                                >
-                                    <div>
-                                        <p className='font-medium'>
-                                            {address.address1}{address.address2 ? `, ${address.address2}` : ''}, {address.city}, {address.state}, {address.zipCode}
-                                        </p>
-                                        <p className='text-sm text-gray-600'>{address.country}</p>
-                                        <p className='text-sm text-gray-500'>Type: {address.addressType || 'N/A'}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => handleSelectAddress(address._id)}
-                                        className='bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400'
-                                    >
-                                        Select
-                                    </button>
+            <div className='content-wrapper animate-page' style={{ maxWidth: '800px' }}>
+                <h1 className="section-title" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+                    Select Delivery Address
+                </h1>
+
+                {loading && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {[1, 2].map(i => (
+                            <div key={i} className="card" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <div className="skeleton" style={{ height: '14px', width: '60%' }} />
+                                    <div className="skeleton" style={{ height: '12px', width: '40%' }} />
+                                    <div className="skeleton" style={{ height: '12px', width: '30%' }} />
                                 </div>
-                            ))}
+                                <div className="skeleton" style={{ height: '36px', width: '100px', borderRadius: '8px' }} />
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {!loading && error && (
+                    <div className="empty-state">
+                        <h2 className="empty-state-title text-danger">Error Loading Addresses</h2>
+                        <p className="empty-state-subtitle">{error}</p>
+                        <button className="btn btn-primary" onClick={() => window.location.reload()}>Retry</button>
+                    </div>
+                )}
+
+                {!loading && !error && addresses.length === 0 && (
+                    <div className="empty-state card">
+                        <AiOutlineEnvironment className="empty-state-icon" size={56} />
+                        <h2 className="empty-state-title">No addresses available</h2>
+                        <p className="empty-state-subtitle">Please add a shipping address to proceed with your order.</p>
+                        <button className="btn btn-primary" onClick={() => navigate('/createAddress')}>
+                            <AiOutlinePlus size={16} />
+                            Add New Address
+                        </button>
+                    </div>
+                )}
+
+                {!loading && !error && addresses.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {addresses.map((address) => (
+                            <div
+                                key={address._id}
+                                className="card"
+                                style={{
+                                    padding: '1.5rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '1rem',
+                                    transition: 'all 0.2s ease',
+                                    cursor: 'pointer'
+                                }}
+                                onClick={() => handleSelectAddress(address._id)}
+                                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary-light)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
+                            >
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <AiOutlineEnvironment size={20} color="var(--color-primary)" />
+                                    </div>
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                                                {address.addressType || 'Saved Address'}
+                                            </span>
+                                        </div>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+                                            {address.address1}{address.address2 ? `, ${address.address2}` : ''}
+                                            <br />
+                                            {address.city}, {address.state} {address.zipCode}
+                                            <br />
+                                            {address.country}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={(e) => { e.stopPropagation(); handleSelectAddress(address._id); }}
+                                >
+                                    <AiOutlineCheckCircle size={16} />
+                                    Deliver Here
+                                </button>
+                            </div>
+                        ))}
+
+                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+                            <button className="btn btn-outline" onClick={() => navigate('/createAddress')}>
+                                <AiOutlinePlus size={16} />
+                                Add Another Address
+                            </button>
                         </div>
-                    ) : (
-                        <p className='text-center text-gray-700'>No addresses found. Please add an address.</p>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
-
-
-
 
 export default SelectAddress;

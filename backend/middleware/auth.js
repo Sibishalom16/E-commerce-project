@@ -18,7 +18,7 @@ const isAuthenticatedUser = catchAsyncErrors(async (req, res, next) => {
     let decodedData;
     try {
         // Verify token using your JWT secret
-        decodedData = jwt.verify(token, "randomtoken1234567890");
+        decodedData = jwt.verify(token, process.env.JWT_SECRET || "randomtoken1234567890");
         console.log("Decoded data:", decodedData);
     } catch (err) {
         // If this block executes, jwt.verify() threw an error

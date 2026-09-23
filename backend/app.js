@@ -16,9 +16,8 @@ app.use(cookieParser());
 
 // Configure CORS to allow requests from React frontend
 app.use(cors({
-  // origin: 'http://localhost:3000', // Update this if your frontend is hosted elsewhere
-  origin:'*',
-  credentials: true, // Enable if you need to send cookies or authentication headers
+  origin: 'http://localhost:5173',
+  credentials: true,
 }));
 
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
@@ -35,7 +34,6 @@ const productRoutes = require('./controller/product');
 // app.use("/api/v2/user", userRoutes);
 app.use("/api/v2/product", productRoutes);
 app.use("/api/v2/user", userRoutes);
-app.use("/api/v2/product", productRoutes);
  app.use("/api/v2/orders", orders);
 
 // Error Handling Middleware
