@@ -7,17 +7,6 @@ if (process.env.DB_URL !== "PRODUCTION") {
 
 const app = require("./app");
 const connectDatabase = require("./db/database");
-const cors = require("cors");
-
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://e-commerce-project-plum-nine.vercel.app",
-    ],
-    credentials: true,
-  })
-);
 
 // Handling uncaught Exception
 process.on("uncaughtException", (err) => {
