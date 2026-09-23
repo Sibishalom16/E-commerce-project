@@ -4,59 +4,92 @@ import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import { AiOutlineShoppingCart, AiOutlineEye } from "react-icons/ai";
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE =
+  import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-export default function Product({ _id, name, images, description, price, category, stock }) {
+export default function Product({
+  _id,
+  name,
+  images,
+  description,
+  price,
+  category,
+  stock,
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!images || images.length <= 1) return;
+
     const interval = setInterval(() => {
-      setCurrentIndex(prevIndex => (prevIndex + 1) % images.length);
+      setCurrentIndex(
+        (prevIndex) => (prevIndex + 1) % images.length
+      );
     }, 3000);
+
     return () => clearInterval(interval);
   }, [images]);
 
-  const currentImage = images && images.length > 0 ? images[currentIndex] : null;
+  const currentImage =
+    images && images.length > 0
+      ? images[currentIndex]
+      : null;
+
   const isInStock = stock === undefined || stock > 0;
 
+  // Handle both Cloudinary URLs and old local image paths
+  const imageUrl = currentImage
+    ? currentImage.startsWith("http")
+      ? currentImage
+      : `${API_BASE}${currentImage}`
+    : null;
+
   return (
-    <div className="card-product animate-fadeInUp" style={{ display: 'flex', flexDirection: 'column' }}>
+    <div
+      className="card-product animate-fadeInUp"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {/* Image container */}
       <div
         style={{
-          position: 'relative',
-          overflow: 'hidden',
-          aspectRatio: '4/3',
-          backgroundColor: 'var(--color-surface-alt)',
+          position: "relative",
+          overflow: "hidden",
+          aspectRatio: "4/3",
+          backgroundColor: "var(--color-surface-alt)",
         }}
       >
-        {currentImage ? (
+        {imageUrl ? (
           <img
-            src={`${API_BASE}${currentImage}`}
+            src={imageUrl}
             alt={name}
             className="product-image"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = 'https://placehold.co/400x300/f1f5f9/94a3b8?text=No+Image';
+              e.target.src =
+                "https://placehold.co/400x300/f1f5f9/94a3b8?text=No+Image";
             }}
           />
         ) : (
           <div
             style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              gap: '0.5rem',
-              color: 'var(--color-text-muted)',
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "column",
+              gap: "0.5rem",
+              color: "var(--color-text-muted)",
             }}
           >
             <AiOutlineShoppingCart size={36} />
-            <span style={{ fontSize: '0.75rem' }}>No Image</span>
+            <span style={{ fontSize: "0.75rem" }}>
+              No Image
+            </span>
           </div>
         )}
 
@@ -64,12 +97,14 @@ export default function Product({ _id, name, images, description, price, categor
         {category && (
           <div
             style={{
-              position: 'absolute',
-              top: '10px',
-              left: '10px',
+              position: "absolute",
+              top: "10px",
+              left: "10px",
             }}
           >
-            <span className="badge badge-primary">{category}</span>
+            <span className="badge badge-primary">
+              {category}
+            </span>
           </div>
         )}
 
@@ -77,29 +112,39 @@ export default function Product({ _id, name, images, description, price, categor
         {!isInStock && (
           <div
             style={{
-              position: 'absolute',
-              top: '10px',
-              right: '10px',
+              position: "absolute",
+              top: "10px",
+              right: "10px",
             }}
           >
-            <span className="badge badge-danger">Out of Stock</span>
+            <span className="badge badge-danger">
+              Out of Stock
+            </span>
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div
+        style={{
+          padding: "1rem",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.5rem",
+        }}
+      >
         <h3
           style={{
-            fontSize: '0.95rem',
+            fontSize: "0.95rem",
             fontWeight: 700,
-            color: 'var(--color-text-primary)',
+            color: "var(--color-text-primary)",
             margin: 0,
             lineHeight: 1.3,
-            display: '-webkit-box',
+            display: "-webkit-box",
             WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
           }}
         >
           {name}
@@ -108,34 +153,53 @@ export default function Product({ _id, name, images, description, price, categor
         {description && (
           <p
             style={{
-              fontSize: '0.8rem',
-              color: 'var(--color-text-muted)',
+              fontSize: "0.8rem",
+              color: "var(--color-text-muted)",
               margin: 0,
               lineHeight: 1.5,
-              display: '-webkit-box',
+              display: "-webkit-box",
               WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
             }}
           >
             {description}
           </p>
         )}
 
-        <div style={{ marginTop: 'auto', paddingTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div
+          style={{
+            marginTop: "auto",
+            paddingTop: "0.5rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <span
             style={{
-              fontSize: '1.15rem',
+              fontSize: "1.15rem",
               fontWeight: 800,
-              color: 'var(--color-primary)',
-              letterSpacing: '-0.02em',
+              color: "var(--color-primary)",
+              letterSpacing: "-0.02em",
             }}
           >
             ${Number(price).toFixed(2)}
           </span>
+
           {stock !== undefined && (
-            <span style={{ fontSize: '0.72rem', color: isInStock ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 600 }}>
-              {isInStock ? `${stock} in stock` : 'Out of stock'}
+            <span
+              style={{
+                fontSize: "0.72rem",
+                color: isInStock
+                  ? "var(--color-success)"
+                  : "var(--color-danger)",
+                fontWeight: 600,
+              }}
+            >
+              {isInStock
+                ? `${stock} in stock`
+                : "Out of stock"}
             </span>
           )}
         </div>
@@ -143,7 +207,10 @@ export default function Product({ _id, name, images, description, price, categor
         <button
           className="btn btn-primary btn-full"
           onClick={() => navigate(`/product/${_id}`)}
-          style={{ marginTop: '0.5rem', borderRadius: '10px' }}
+          style={{
+            marginTop: "0.5rem",
+            borderRadius: "10px",
+          }}
           aria-label={`View details for ${name}`}
         >
           <AiOutlineEye size={15} />
